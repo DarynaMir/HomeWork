@@ -1,27 +1,44 @@
+import os
 from pathlib import Path
 import shutil
 import sys
 import file_parser
 from normalize import normalize
 
+def is_empty_directory(directory):
+    return not any(os.listdir(directory))
+
+def remove_directory_contents(directory):
+    for root, dirs, files in os.walk(directory):
+        for file in files:
+            file_path = os.path.join(root, file)
+            os.remove(file_path)
+        for dir in dirs:
+            dir_path = os.path.join(root, dir)
+            os.rmdir(dir_path)
+
 def handle_media(file_name: Path, target_folder: Path):
-    target_folder.mkdir(exist_ok=True, parents=True)
-    file_name.replace(target_folder / normalize(file_name.name))
+    try:
+        target_folder.mkdir(parents=True, exist_ok=True)
+        file_name.rename(target_folder / normalize(file_name.name))
+    except Exception as e:
+        print(f"Error handling media file: {e}")
 
 def handle_archive(file_name: Path, target_folder: Path):
-    target_folder.mkdir(exist_ok=True, parents=True)
-    folder_for_file = target_folder / normalize(file_name.name.replace(file_name.suffix, ''))
-    folder_for_file.mkdir(exist_ok=True, parents=True)
     try:
+        target_folder.mkdir(parents=True, exist_ok=True)
+        folder_for_file = target_folder / normalize(file_name.stem)
+        folder_for_file.mkdir(parents=True, exist_ok=True)
         shutil.unpack_archive(str(file_name.absolute()), str(folder_for_file.absolute()))
+        file_name.unlink()
     except shutil.ReadError:
         folder_for_file.rmdir()
-        return
-    file_name.unlink()
-
+    except Exception as e:
+        print(f"Error handling archive: {e}")
 
 def main(folder: Path):
     file_parser.scan(folder)
+
     for file in file_parser.JPEG_IMAGES:
         handle_media(file, folder / 'IMAGES' / 'JPEG')
     for file in file_parser.JPG_IMAGES:
@@ -66,21 +83,14 @@ def main(folder: Path):
         handle_archive(file, folder / 'ARCHIVES')
 
     for folder in file_parser.FOLDERS[::-1]:
-     
-        try:
-            folder.rmdir()
-        except OSError:
-            print(f'Error during remove folder {folder}')
-
+        if is_empty_directory(folder):
+            try:
+                folder.rmdir()
+            except OSError as e:
+                print(f'Error during remove folder {folder}: {e}')
+        else:
+            remove_directory_contents(folder)
 
 if __name__ == "__main__":
     folder_process = Path(sys.argv[1])
     main(folder_process.resolve())
-
-
-
-
-
-
-
-

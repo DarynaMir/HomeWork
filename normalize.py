@@ -14,6 +14,17 @@ for cyrillic, latin in zip(CYRILLIC_SYMBOLS, TRANSLATION):
 import re
 
 def normalize(name: str) -> str:
-    name_without_extension, file_extension = name.rsplit('.', 1)
-    name_without_extension = re.sub(r'\W', '_', name_without_extension)
-    return f"{name_without_extension}.{file_extension}"
+    if '.' in name:
+        name_without_extension, file_extension = name.rsplit('.', 1)
+    else:
+        return name
+
+    translate_name = re.sub(r'\W', '_', name_without_extension.translate(TRANS))
+    return f"{translate_name}.{file_extension}"
+
+
+
+
+   # name_without_extension, file_extension = name.rsplit('.', 1)
+    #name_without_extension = re.sub(r'\W', '_', name_without_extension)
+    #return f"{name_without_extension}.{file_extension}"

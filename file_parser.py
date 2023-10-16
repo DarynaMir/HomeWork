@@ -1,4 +1,5 @@
 import sys
+import os
 from pathlib import Path
 
 JPEG_IMAGES = []
@@ -76,6 +77,9 @@ def scan(folder: Path):
             except KeyError:
                 UNKNOWN.add(extension)
                 MY_OTHER.append(full_name)
+
+def is_empty_directory(directory):
+    return not any(os.listdir(directory))
 
 if __name__ == '__main__':
     folder_process = sys.argv[1]
